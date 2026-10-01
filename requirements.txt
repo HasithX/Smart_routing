@@ -1,0 +1,3 @@
+# Core transit graph analysis & visualization
+networkx>=3.0
+matplotlib>=3.7.0
