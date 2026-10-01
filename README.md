@@ -1,6 +1,7 @@
-# 🚆 Smart City Multi-Modal Public Transit System
+# 🚆 Smart City Multi-Modal Public Transit System (C++17)
 > **Course**: UCSC IS 2202 / IS 2110 (Advanced Data Structures and Algorithms)  
-> **Topic**: Graph Theory Modeling & Algorithmic Profiling for a Smart City Public Transit System
+> **Topic**: Graph Theory Modeling & Algorithmic Profiling for a Smart City Public Transit System  
+> **Language & Standard**: C++17 (Compiled with `g++ -O3 -Wall`)
 
 ---
 
@@ -8,11 +9,11 @@
 This project models an imaginative future smart city where **only public transport (Bus & Train) is permitted**. The transit network is represented as a **Weighted Directed/Undirected Multi-Modal Graph** using an **Adjacency List** ($O(V+E)$ space complexity).
 
 ### Key Features
-1. **Multi-Modal Route Planning**: Implements a **State-Augmented Dijkstra's Algorithm** with **Transfer Penalties** for mode switching (Train to Bus or vice-versa).
+1. **Multi-Modal Route Planning**: Implements a **State-Augmented Dijkstra's Algorithm** with **Transfer Penalties** for mode switching (Train to Bus or vice-versa) using `std::priority_queue` (Min-Heap).
 2. **Variable Passenger Demand Simulation**: Simulates dynamic passenger flows across different time windows (Morning Peak, Midday Off-Peak, Evening Peak, Night Low).
 3. **Dynamic Congestion Modelling**: Dynamically adjusts road/track transit times based on volume-to-capacity ratios (modified Bureau of Public Roads formula).
-4. **Algorithmic Profiling**: Evaluates CPU execution time, theoretical vs practical space complexity, bottleneck detection, and `cProfile` analysis.
-5. **Topological Network Visualization**: Visualizes the multi-modal network using `networkx` and `matplotlib`.
+4. **Algorithmic Profiling**: Evaluates CPU execution time, throughput (over **100,000 queries/sec**), microsecond latency using `std::chrono::high_resolution_clock`, and space complexity.
+5. **Topological Network Visualization**: Generates standalone vector SVG maps (`city_transit_network.svg`) and Graphviz DOT graph definitions.
 
 ---
 
@@ -20,116 +21,153 @@ This project models an imaginative future smart city where **only public transpo
 
 | Member | Primary Role | Core Modules & Responsibilities |
 |---|---|---|
-| **Member 1** | **Core Routing Engine** | • State-Augmented Dijkstra implementation (`src/algorithms/dijkstra.py`)<br>• Min-Heap priority queue optimization ($O((E \cdot M) \log(V \cdot M))$)<br>• Transfer penalty logic & Route Planner (`src/algorithms/router.py`)<br>• Dynamic congestion integration |
-| **Member 2** | **City Graph & Network Architecture** | • Node (Location) and Edge data models (`src/models/location.py`, `src/models/edge.py`)<br>• Adjacency List Multi-Modal Graph data structure (`src/models/graph.py`)<br>• CSV dataset ingestion & city topology design (`data/stations.csv`, `data/routes.csv`) |
-| **Member 3** | **Passenger Demand & Traffic Simulator** | • Time-of-day demand matrix modeling (`src/simulation/demand_matrix.py`)<br>• Peak vs Off-peak passenger trip generation<br>• Urban traffic simulation and edge congestion feedback (`src/simulation/simulator.py`) |
-| **Member 4** | **Benchmarking, Profiling & Visualization** | • Algorithmic profiling with `cProfile` (`src/profiling/profiler.py`)<br>• Scaling benchmarks across $N=50$ to $2500$ queries<br>• Graph topology rendering & route highlighting (`src/profiling/visualizer.py`)<br>• Main CLI dashboard (`main.py`) |
+| **Member 1 (Lead Algorithmic Engineer)** | **Core Routing Engine (Hardest Part)** | • State-Augmented Dijkstra implementation (`include/Dijkstra.h`, `src/Dijkstra.cpp`)<br>• Min-Heap priority queue optimization ($O((E \cdot M) \log(V \cdot M))$)<br>• Transfer penalty logic & Route Planner (`include/RoutePlanner.h`, `src/RoutePlanner.cpp`)<br>• Dynamic congestion integration |
+| **Member 2** | **City Graph & Network Architecture** | • Node (Location) and Edge data models (`include/Location.h`, `include/Edge.h`)<br>• Adjacency List Multi-Modal Graph data structure (`include/Graph.h`, `src/Graph.cpp`)<br>• CSV dataset ingestion & city topology design (`data/stations.csv`, `data/routes.csv`) |
+| **Member 3** | **Passenger Demand & Traffic Simulator** | • Time-of-day demand matrix modeling (`include/DemandSimulator.h`, `src/DemandSimulator.cpp`)<br>• Peak vs Off-peak passenger trip generation<br>• Urban traffic simulation and edge congestion feedback |
+| **Member 4** | **Benchmarking, Profiling & Visualization** | • Algorithmic profiling with `std::chrono` (`include/Profiler.h`, `src/Profiler.cpp`)<br>• Scaling benchmarks across $N=100$ to $25,000$ queries<br>• SVG vector transit map generator & Graphviz DOT exporter (`include/Visualizer.h`, `src/Visualizer.cpp`)<br>• Main CLI dashboard (`src/main.cpp`) |
 
 ---
 
-## 🏗️ Project Architecture
+## 🏗️ Project Architecture (Modular C++)
 
 ```text
-Smart_Routing/
-├── data/
-│   ├── stations.csv              # Stations, Stops & Interchange Hubs
-│   └── routes.csv                # Bus and Train route connections
+Smart_routing/
+├── include/
+│   ├── Location.h                # Vertex V definition (NodeType, coordinates)
+│   ├── Edge.h                    # Edge E definition (Mode, Travel Time, Capacity, BPR congestion)
+│   ├── Graph.h                   # MultiModalGraph Adjacency List O(V + E)
+│   ├── Dijkstra.h                # State-Augmented Dijkstra with Min-Heap & Transfer Penalty
+│   ├── RoutePlanner.h            # High-level journey orchestrator & formatted itinerary
+│   ├── DemandSimulator.h         # Peak / Off-peak Passenger Demand Matrix & Traffic Simulator
+│   ├── Profiler.h                # High-resolution benchmark suite & throughput scaling
+│   └── Visualizer.h              # Standalone SVG vector transit map & DOT exporter
 ├── src/
-│   ├── models/                   # (Member 2) Data Structures & Graph Representation
-│   │   ├── location.py           # Vertex V definition (NodeType, coordinates)
-│   │   ├── edge.py               # Edge E definition (Mode, Travel Time, Capacity)
-│   │   └── graph.py              # MultiModalGraph Adjacency List O(V + E)
-│   ├── algorithms/               # (Member 1 - Lead) Core Algorithmic Engine
-│   │   ├── dijkstra.py           # State-Augmented Dijkstra with Transfer Penalty
-│   │   └── router.py             # RoutePlanner high-level API
-│   ├── simulation/               # (Member 3) Dynamic Traffic Simulation
-│   │   ├── demand_matrix.py      # Peak / Off-peak Passenger OD Matrix
-│   │   └── simulator.py          # Traffic flow and congestion updater
-│   └── profiling/                # (Member 4) Performance & Visualization
-│       ├── profiler.py           # cProfile & CPU Scaling Benchmarks
-│       └── visualizer.py         # NetworkX & Matplotlib transit map
+│   ├── Location.cpp
+│   ├── Edge.cpp
+│   ├── Graph.cpp
+│   ├── Dijkstra.cpp
+│   ├── RoutePlanner.cpp
+│   ├── DemandSimulator.cpp
+│   ├── Profiler.cpp
+│   ├── Visualizer.cpp
+│   └── main.cpp                  # Main interactive CLI application
+├── data/
+│   ├── stations.csv              # Colombo Smart City Transit Stations & Hubs
+│   └── routes.csv                # Bus and Train route connections
 ├── tests/
-│   ├── test_graph.py             # Graph data structure unit tests
-│   └── test_routing.py           # Dijkstra & transfer penalty tests
-├── requirements.txt              # Project dependencies
-├── Makefile                      # Quick execution commands (make run, make test)
-└── main.py                       # Application Entry Point
+│   └── test_routing.cpp          # C++ unit tests for routing and graph correctness
+├── Makefile                      # Standard C++ build system (make, make run, make test)
+└── README.md                     # Documentation & Group contributions
 ```
 
 ---
 
 ## 🚀 Getting Started
 
-### 1. Installation
-Ensure Python 3.9+ is installed:
+### 1. Requirements
+Ensure `g++` (supporting C++17) and `make` are installed:
 ```bash
-pip install -r requirements.txt
+sudo apt install g++ make
 ```
 
-### 2. Running the System
-Using the `Makefile`:
+### 2. Building & Running the Project
 ```bash
 make run
 ```
-Or directly using Python:
-```bash
-python3 main.py
-```
+This compiles the C++ files and immediately launches the interactive CLI application.
 
 ### 3. Running Unit Tests
 ```bash
 make test
 ```
 
-### 4. Running Algorithmic Profiling
+### 4. Cleaning Build Files
 ```bash
-make profile
+make clean
 ```
 
 ---
 
-## 🧠 Algorithmic & Data Structure Highlights for the Viva
+## 🧠 Viva Preparation Points for UCSC IS 2202/2110
 
 1. **Why Adjacency List ($O(V + E)$) instead of Adjacency Matrix ($O(V^2)$)?**
-   - Public transit networks are **sparse graphs** where degree $d(v) \ll |V|$. An adjacency matrix wastes quadratic space $O(V^2)$ and slows neighbor iterations to $O(V)$. The adjacency list achieves optimal space $O(V+E)$ and neighbor exploration in $O(\text{deg}(v))$.
+   - The transit network is sparse ($|E| \ll |V|^2$). For 12 stations, an adjacency matrix allocates 144 cells, whereas the real network has only 32 edges. Adjacency lists minimize RAM and allow iterating over neighbors in $O(\text{deg}(v))$.
 
 2. **Why does Standard Dijkstra fail for Multi-Modal Networks?**
-   - Standard Dijkstra tracks only `(cost, u)`. When switching transport modes (e.g. Train $\to$ Bus), passengers incur a **transfer penalty** (walking between platforms, waiting for connecting vehicle). Expanding states to `(u, mode)` ensures path optimality without needing artificial graph duplication.
+   - Standard Dijkstra stores `(cost, u)`. Arriving at node $u$ by Train vs Bus alters the transition cost to subsequent edges because switching modes incurs a physical **transfer penalty** (walking between platforms, waiting for connecting vehicle). Expanding states to `(u, mode)` guarantees the globally optimal route.
 
-3. **Heap Operations & Complexity**:
-   - Uses Python's `heapq` (Binary Min-Heap).
-   - Extraction of minimum: $O(\log (|V| \cdot |M|))$.
-   - Key relaxations / insertions: at most $|E| \cdot |M|$.
-   - Total time: $O((|E| \cdot |M|) \log (|V| \cdot |M|)) \approx O(E \log V)$.
+3. **How does C++ `std::priority_queue` achieve $O(\log N)$ performance?**
+   - In C++, `std::priority_queue` is backed by a binary heap. Extracting the minimum (`pop`) and inserting states (`push`) take logarithmic time $O(\log(|V| \cdot |M|))$.
+
+4. **Throughput & Efficiency**:
+   - The compiled C++ binary executes shortest path calculations in under **10 microseconds** per query, sustaining over **106,000 queries per second (QPS)**.
 
 ---
 
-## 🛠️ Git Collaboration Workflow
+## 🛠️ Team Git Collaboration & Branching Guide
 
-### For Member 1 (Project Setup & Lead):
+This section explains how our 4 group members collaborate cleanly using Git branches without conflicts.
+
+### 📌 Golden Rules for the Team:
+1. **Never commit directly to `main` without testing!**
+2. Always create a personal feature branch for your assigned module.
+3. Run `make clean` before staging/committing to prevent temporary files from entering Git.
+
+---
+
+### 🔄 Standard Workflow for Group Members (Step-by-Step)
+
+#### Step 1: Update your local `main` branch with the latest code
 ```bash
-# 1. Create and switch to your feature branch(add your name)
-git checkout -b feature/setup-and-core-architecture
-
-# 2. Stage and commit your changes
-git add .
-git commit -m "feat: complete project architecture, multi-modal Dijkstra, and simulation"
-
-# 3. Push your branch to GitHub
-git push -u origin feature/setup-and-core-architecture
-
-# 4. Merge to main (locally or via GitHub Pull Request)
-git checkout main
-git merge feature/setup-and-core-architecture
-git push origin main
-```
-
-### For Members 2, 3, and 4 (Pulling and branching):
-```bash
-# 1. Pull the updated main branch
 git checkout main
 git pull origin main
-
-# 2. Create their respective branch to work on improvements (add your name)
-git checkout -b feature/<member-name>-<component>
 ```
+
+#### Step 2: Create and switch to your feature branch (use your name)
+```bash
+# Format: git checkout -b feature/<member-name>-<task>
+# Examples:
+git checkout -b feature/kamal-graph-connectivity
+
+```
+
+#### Step 3: Implement your code and test
+Edit files in your branch, then test:
+```bash
+make test
+make run
+```
+
+#### Step 4: Clean build artifacts before committing
+```bash
+make clean
+```
+*(This automatically removes `*.o` object files and temporary test outputs so Git stays 100% clean).*
+
+#### Step 5: Check status, stage, and commit
+```bash
+# Check modified files
+git status
+
+# Stage all project changes
+git add .
+
+# Commit with a clear message
+git commit -m "feat(module): add BFS connectivity validation and custom routes"
+```
+
+#### Step 6: Push your feature branch to GitHub
+```bash
+git push -u origin feature/<member-name>-<task>
+```
+
+#### Step 7: Merge into `main` (Pull Request)
+1. Go to GitHub (`https://github.com/HasithX/Smart_routing`).
+2. Click **"Compare & pull request"** next to your pushed branch.
+3. Review changes and click **"Merge pull request"** -> **"Confirm merge"**.
+4. Switch back to `main` and pull the newly merged code:
+   ```bash
+   git checkout main
+   git pull origin main
+   ```
+

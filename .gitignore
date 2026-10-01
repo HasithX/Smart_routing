@@ -1,47 +1,17 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
+# Compiled Object files and Executables
+*.o
+*.obj
+smart_transit
+test_runner
 
-# C extensions
-*.so
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Virtual environments
-venv/
-.venv/
-ENV/
-env/
-
-# IDE & Editor files
+# Editor and OS files
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+.DS_Store
 
-# Profiling and test outputs
-*.prof
-*.png
-.pytest_cache/
-.coverage
-htmlcov/
+# Temporary outputs from runs
+*.dot
+*.svg

@@ -1,31 +1,50 @@
-.PHONY: all run test profile clean help install
+CXX = g++
+CXXFLAGS = -std=c++17 -O3 -Wall -Iinclude
 
-PYTHON := python3
+SRCS = src/Location.cpp \
+       src/Edge.cpp \
+       src/Graph.cpp \
+       src/Dijkstra.cpp \
+       src/RoutePlanner.cpp \
+       src/DemandSimulator.cpp \
+       src/Profiler.cpp \
+       src/Visualizer.cpp
 
-all: run
+OBJS = $(SRCS:.cpp=.o)
 
-help:
-	@echo "Smart City Public Transit System - Commands"
-	@echo "---------------------------------------------"
-	@echo "make install   : Install project dependencies"
-	@echo "make run       : Run the main interactive CLI application"
-	@echo "make test      : Run unit tests"
-	@echo "make profile   : Run cProfile & algorithmic performance benchmarks"
-	@echo "make clean     : Remove temporary files and cache"
+TARGET = smart_transit
+TEST_TARGET = test_runner
 
-install:
-	$(PYTHON) -m pip install -r requirements.txt --break-system-packages
+.PHONY: all run test clean help
 
-run:
-	$(PYTHON) main.py
+all: $(TARGET)
 
-test:
-	$(PYTHON) -m unittest discover -s tests -p "test_*.py"
+$(TARGET): $(OBJS) src/main.o
+	$(CXX) $(CXXFLAGS) -o $@ $^
 
-profile:
-	$(PYTHON) -m src.profiling.profiler
+src/main.o: src/main.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+src/%.o: src/%.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+test: $(OBJS) tests/test_routing.o
+	$(CXX) $(CXXFLAGS) -o $(TEST_TARGET) $^
+	./$(TEST_TARGET)
+
+tests/test_routing.o: tests/test_routing.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+run: $(TARGET)
+	./$(TARGET)
 
 clean:
-	find . -type d -name "__pycache__" -exec rm -rf {} +
-	find . -type f -name "*.pyc" -delete
-	find . -type f -name "*.prof" -delete
+	rm -f src/*.o tests/*.o $(TARGET) $(TEST_TARGET) *.svg *.dot
+
+help:
+	@echo "Smart City Public Transit System (C++17) - Makefile Commands"
+	@echo "------------------------------------------------------------"
+	@echo "make        : Compile the binary executable"
+	@echo "make run    : Compile and launch the interactive transit system"
+	@echo "make test   : Compile and run algorithmic unit tests"
+	@echo "make clean  : Remove compiled binaries and object files"
