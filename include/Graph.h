@@ -33,6 +33,7 @@ public:
     const Location* getNode(const std::string& nodeId) const;
 
     bool loadFromCSV(const std::string& stationsPath, const std::string& routesPath);
+    bool isConnected() const;
     void resetAllCongestion();
     GraphStats getStats() const;
 };

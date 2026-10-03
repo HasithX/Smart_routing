@@ -11,3 +11,5 @@ ST09,UCSC_University_Gate,BUS_STOP,Educational,40.0,50.0
 ST10,Town_Hall_Hospital,BUS_STOP,PublicService,50.0,65.0
 ST11,Colombo_Harbor_Port,TRAIN_STATION,Industrial,45.0,95.0
 ST12,Bambalapitiya_Station,INTERCHANGE_HUB,Residential,35.0,45.0
+ST13,Wellawatte_Station,TRAIN_STATION,Residential,30.0,38.0
+ST14,Kelaniya_Station,TRAIN_STATION,Residential,65.0,96.0

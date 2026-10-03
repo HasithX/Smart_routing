@@ -3,6 +3,8 @@
 #include <sstream>
 #include <iostream>
 #include <algorithm>
+#include <queue>
+#include <unordered_set>
 
 namespace {
     std::string trim(const std::string& str) {
@@ -59,6 +61,32 @@ const Location* MultiModalGraph::getNode(const std::string& nodeId) const {
         return &(it->second);
     }
     return nullptr;
+}
+
+bool MultiModalGraph::isConnected() const {
+    if (nodes.empty()) {
+        return false;
+    }
+
+    std::queue<std::string> stationsToVisit;
+    std::unordered_set<std::string> visited;
+    const std::string& startId = nodes.begin()->first;
+
+    stationsToVisit.push(startId);
+    visited.insert(startId);
+
+    while (!stationsToVisit.empty()) {
+        const std::string currentId = stationsToVisit.front();
+        stationsToVisit.pop();
+
+        for (const Edge& edge : getNeighbors(currentId)) {
+            if (nodes.find(edge.target) != nodes.end() && visited.insert(edge.target).second) {
+                stationsToVisit.push(edge.target);
+            }
+        }
+    }
+
+    return visited.size() == nodes.size();
 }
 
 bool MultiModalGraph::loadFromCSV(const std::string& stationsPath, const std::string& routesPath) {
