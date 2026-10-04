@@ -39,7 +39,22 @@ void testMultiModalRouting() {
     assert(resDirect.transferCount == 0);
     assert(resDirect.totalTimeMin == 25.0);
 
-    std::cout << "All C++ Unit Tests PASSED successfully!\n";
+    // Test Hasitha's Multi-Criteria Pareto Optimization:
+    // 1. FASTEST_TIME -> Route A -> B -> C (21 mins, 1 transfer)
+    RouteResult optFast = router.findOptimalPath("A", "C", RoutingPreference::FASTEST_TIME);
+    assert(optFast.isReachable());
+    assert(optFast.pathNodes.size() == 3);
+    assert(optFast.transferCount == 1);
+    assert(optFast.totalTimeMin == 21.0);
+
+    // 2. MINIMUM_TRANSFERS -> Direct Bus A -> C (25 mins, 0 transfers)
+    RouteResult optDirect = router.findOptimalPath("A", "C", RoutingPreference::MINIMUM_TRANSFERS);
+    assert(optDirect.isReachable());
+    assert(optDirect.pathNodes.size() == 2);
+    assert(optDirect.transferCount == 0);
+    assert(optDirect.totalTimeMin == 25.0);
+
+    std::cout << "[PASS] All Multi-Modal Dijkstra & Pareto Multi-Criteria Routing Unit Tests PASSED!\n";
 }
 
 int main() {

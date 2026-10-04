@@ -14,8 +14,12 @@ public:
     explicit RoutePlanner(const MultiModalGraph& g, double defaultTransferPenalty = 6.0)
         : graph(g), router(g, defaultTransferPenalty) {}
 
-    RouteResult planJourney(const std::string& originId, const std::string& destinationId) const;
+    RouteResult planJourney(const std::string& originId,
+                            const std::string& destinationId,
+                            RoutingPreference preference = RoutingPreference::FASTEST_TIME) const;
+
     std::string formatItinerary(const RouteResult& result) const;
+    std::string comparePreferences(const std::string& originId, const std::string& destinationId) const;
 };
 
 #endif // ROUTEPLANNER_H

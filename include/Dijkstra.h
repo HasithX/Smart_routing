@@ -5,6 +5,13 @@
 #include <vector>
 #include <string>
 
+enum class RoutingPreference {
+    FASTEST_TIME,      // Minimizes total commute duration (standard penalty = 6.0 mins)
+    MINIMUM_TRANSFERS  // Heavily penalizes transfers (+25.0 mins) to favor direct routes
+};
+
+std::string routingPreferenceToString(RoutingPreference pref);
+
 struct RouteLeg {
     std::string source;
     std::string target;
@@ -26,10 +33,13 @@ struct RouteResult {
     double totalTimeMin;
     double totalDistanceKm;
     int transferCount;
+    double totalTransferPenaltyMin;
+    RoutingPreference preference;
     std::vector<RouteLeg> legs;
     std::vector<std::string> pathNodes;
 
-    RouteResult() : totalTimeMin(0.0), totalDistanceKm(0.0), transferCount(0) {}
+    RouteResult() : totalTimeMin(0.0), totalDistanceKm(0.0), transferCount(0),
+                    totalTransferPenaltyMin(0.0), preference(RoutingPreference::FASTEST_TIME) {}
     bool isReachable() const { return !pathNodes.empty(); }
 };
 
@@ -45,6 +55,10 @@ public:
     RouteResult findShortestPath(const std::string& originId,
                                  const std::string& destinationId,
                                  double customTransferPenalty = -1.0) const;
+
+    RouteResult findOptimalPath(const std::string& originId,
+                                const std::string& destinationId,
+                                RoutingPreference preference) const;
 };
 
 #endif // DIJKSTRA_H

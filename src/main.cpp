@@ -54,12 +54,32 @@ void menuPlanRoute(const RoutePlanner& planner, const MultiModalGraph& graph, co
         return;
     }
 
-    RouteResult result = planner.planJourney(orig, dest);
+    std::cout << "\nSelect Routing Preference (Pareto Optimization):\n";
+    std::cout << "  1. Fastest Travel Time (Standard multi-modal transfer)\n";
+    std::cout << "  2. Minimum Transfers (Prioritize direct routes for elderly / luggage)\n";
+    std::cout << "  3. Compare Both (Side-by-side Pareto Trade-off Analysis)\n";
+    std::cout << "Enter preference [1-3, default 1]: ";
+
+    std::string prefChoice;
+    std::cin >> prefChoice;
+
+    if (prefChoice == "3") {
+        std::cout << planner.comparePreferences(orig, dest) << "\n";
+        RouteResult fastResult = planner.planJourney(orig, dest, RoutingPreference::FASTEST_TIME);
+        if (fastResult.isReachable()) {
+            std::string routeSvg = "city_transit_route.svg";
+            visualizer.exportSVG(routeSvg, &fastResult, false, "Optimal Journey: " + orig + " -> " + dest);
+        }
+        return;
+    }
+
+    RoutingPreference pref = (prefChoice == "2") ? RoutingPreference::MINIMUM_TRANSFERS : RoutingPreference::FASTEST_TIME;
+    RouteResult result = planner.planJourney(orig, dest, pref);
     std::cout << "\n" << planner.formatItinerary(result) << "\n";
 
     if (result.isReachable()) {
         std::string routeSvg = "city_transit_route.svg";
-        if (visualizer.exportSVG(routeSvg, &result, false, "Optimal Journey: " + orig + " -> " + dest)) {
+        if (visualizer.exportSVG(routeSvg, &result, false, "Journey (" + routingPreferenceToString(pref) + "): " + orig + " -> " + dest)) {
             std::cout << "[+] Route Highlighted Map exported: " << routeSvg << "\n";
             std::cout << "    (Open '" << routeSvg << "' in your browser to inspect the route)\n";
         }

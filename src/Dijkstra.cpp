@@ -5,6 +5,16 @@
 #include <algorithm>
 #include <cmath>
 
+std::string routingPreferenceToString(RoutingPreference pref) {
+    switch (pref) {
+        case RoutingPreference::MINIMUM_TRANSFERS:
+            return "Minimum Transfers (Direct Route Priority)";
+        case RoutingPreference::FASTEST_TIME:
+        default:
+            return "Fastest Travel Time";
+    }
+}
+
 namespace {
     struct PQElement {
         double cost;
@@ -31,6 +41,7 @@ RouteResult MultiModalDijkstra::findShortestPath(const std::string& originId,
     RouteResult result;
     result.origin = originId;
     result.destination = destinationId;
+    result.preference = RoutingPreference::FASTEST_TIME;
 
     double penalty = (customTransferPenalty >= 0.0) ? customTransferPenalty : defaultTransferPenaltyMin;
 
@@ -128,11 +139,13 @@ RouteResult MultiModalDijkstra::findShortestPath(const std::string& originId,
     std::pair<std::string, int> currState = bestTerminalState;
     double totalDistance = 0.0;
     int transferCount = 0;
+    double totalPenalty = 0.0;
 
     while (predecessors.find(currState) != predecessors.end()) {
         const auto& rec = predecessors[currState];
         if (rec.isTransfer) {
             transferCount++;
+            totalPenalty += rec.transferDelay;
         }
 
         legs.emplace_back(
@@ -156,8 +169,18 @@ RouteResult MultiModalDijkstra::findShortestPath(const std::string& originId,
     result.totalTimeMin = std::round(minDestCost * 100.0) / 100.0;
     result.totalDistanceKm = std::round(totalDistance * 100.0) / 100.0;
     result.transferCount = transferCount;
+    result.totalTransferPenaltyMin = totalPenalty;
     result.legs = std::move(legs);
     result.pathNodes = std::move(pathNodes);
 
     return result;
+}
+
+RouteResult MultiModalDijkstra::findOptimalPath(const std::string& originId,
+                                                const std::string& destinationId,
+                                                RoutingPreference preference) const {
+    double penalty = (preference == RoutingPreference::MINIMUM_TRANSFERS) ? 35.0 : defaultTransferPenaltyMin;
+    RouteResult res = findShortestPath(originId, destinationId, penalty);
+    res.preference = preference;
+    return res;
 }
