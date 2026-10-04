@@ -1,0 +1,17 @@
+# Compiled Object files and Executables
+*.o
+*.obj
+smart_transit
+test_runner
+
+# Editor and OS files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary outputs from runs
+*.dot
+*.svg

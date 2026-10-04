@@ -1,0 +1,13 @@
+id,name,type,zone,x,y
+ST01,Kottawa_Makumbura_MMC,INTERCHANGE_HUB,Residential,85.0,20.0
+ST02,Maharagama_ClockTower,BUS_STOP,Commercial,70.0,30.0
+ST03,Nugegoda_Supermarket,BUS_STOP,Commercial,55.0,40.0
+ST04,Maradana_Interchange,INTERCHANGE_HUB,Mixed,55.0,80.0
+ST05,Colombo_Fort_Station,INTERCHANGE_HUB,Commercial,45.0,85.0
+ST06,Pettah_Central_Terminal,BUS_STOP,Commercial,50.0,85.0
+ST07,Battaramulla_Sethsiripaya,BUS_STOP,Administrative,75.0,70.0
+ST08,Malabe_IT_Park,BUS_STOP,Industrial,90.0,70.0
+ST09,UCSC_University_Gate,BUS_STOP,Educational,40.0,50.0
+ST10,Town_Hall_Hospital,BUS_STOP,PublicService,50.0,65.0
+ST11,Colombo_Harbor_Port,TRAIN_STATION,Industrial,45.0,95.0
+ST12,Bambalapitiya_Station,INTERCHANGE_HUB,Residential,35.0,45.0
