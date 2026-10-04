@@ -15,3 +15,6 @@ test_runner
 # Temporary outputs from runs
 *.dot
 *.svg
+
+# Documentation and submission reports folder
+doc/
