@@ -127,8 +127,6 @@ bool TransitVisualizer::exportSVG(const std::string& filename,
             double x1 = p1.x + offX, y1 = p1.y + offY;
             double x2 = p2.x + offX, y2 = p2.y + offY;
 
-            bool isHigh = highlightedEdges.count({edge.source, edge.target}) > 0;
-
             std::string strokeColor = (edge.mode == TransportMode::TRAIN) ? "#EF4444" : "#60A5FA";
             std::string strokeDash = (edge.mode == TransportMode::TRAIN) ? "none" : "6,4";
             double strokeWidth = (edge.mode == TransportMode::TRAIN) ? 3.5 : 2.0;
