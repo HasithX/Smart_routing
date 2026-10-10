@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart City Transit - Multi-Modal Routing & Profiler</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Top Navigation Bar -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="brand-badge">
+                    <span class="pulse-indicator"></span>
+                    <span class="brand-title">Smart City Transit Engine</span>
+                </div>
+                <span class="badge sys-badge">Multi-Modal Transit Graph Engine</span>
+            </div>
+
+            <div class="header-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Stations |V|</span>
+                    <span class="stat-value" id="hdr-stat-v">14</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Corridors |E|</span>
+                    <span class="stat-value" id="hdr-stat-e">18</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">BFS Connectivity</span>
+                    <span class="stat-value status-online" id="hdr-stat-connected">100% Connected</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Graph Space</span>
+                    <span class="stat-value badge-tech">O(V + E)</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Body: Sidebar + Center Map -->
+        <div class="app-body">
+            <!-- Left Sidebar Controls -->
+            <aside class="sidebar" id="sidebar">
+                <!-- Navigation Tabs -->
+                <nav class="nav-tabs" role="tablist">
+                    <button class="tab-btn active" data-tab="tab-planner" id="btn-tab-planner">
+                        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+                        <span>Journey Planner</span>
+                    </button>
+                    <button class="tab-btn" data-tab="tab-demand" id="btn-tab-demand">
+                        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        <span>Demand & BPR</span>
+                    </button>
+                    <button class="tab-btn" data-tab="tab-disruption" id="btn-tab-disruption">
+                        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <span>Emergency</span>
+                    </button>
+                    <button class="tab-btn" data-tab="tab-profiler" id="btn-tab-profiler">
+                        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                        <span>DSA Profiler</span>
+                    </button>
+                </nav>
+
+                <div class="tab-content-container">
+                    <!-- Tab 1: Journey Planner -->
+                    <section class="tab-pane active" id="tab-planner">
+                        <div class="panel-header">
+                            <h2>Multi-Modal Routing</h2>
+                            <p class="panel-desc">State-Augmented Dijkstra (Node + Mode) with transfer penalty</p>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="select-origin">Origin Station (A)</label>
+                            <div class="select-wrapper">
+                                <select id="select-origin" class="form-select"></select>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="select-dest">Destination Station (B)</label>
+                            <div class="select-wrapper">
+                                <select id="select-dest" class="form-select"></select>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Routing Criteria (Pareto)</label>
+                            <div class="radio-cards">
+                                <label class="radio-card">
+                                    <input type="radio" name="routing-pref" value="fastest" checked>
+                                    <div class="card-body">
+                                        <div class="card-title">Fastest Time</div>
+                                        <div class="card-sub">Standard transfer (+6.0m)</div>
+                                    </div>
+                                </label>
+                                <label class="radio-card">
+                                    <input type="radio" name="routing-pref" value="transfers">
+                                    <div class="card-body">
+                                        <div class="card-title">Min Transfers</div>
+                                        <div class="card-sub">Direct route priority (+35.0m)</div>
+                                    </div>
+                                </label>
+                                <label class="radio-card">
+                                    <input type="radio" name="routing-pref" value="compare">
+                                    <div class="card-body">
+                                        <div class="card-title">Compare Both</div>
+                                        <div class="card-sub">Side-by-side trade-off</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="action-row">
+                            <button class="btn btn-primary" id="btn-plan-route">
+                                <span>Find Optimal Route</span>
+                                <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            </button>
+                            <button class="btn btn-secondary" id="btn-swap-stations" title="Swap Origin and Destination">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                            </button>
+                        </div>
+
+                        <!-- Routing Result Card -->
+                        <div class="results-card" id="planner-results" style="display: none;">
+                            <div class="results-meta">
+                                <div class="metric-pill">
+                                    <span class="m-label">Total Time</span>
+                                    <span class="m-val" id="res-time">--</span>
+                                </div>
+                                <div class="metric-pill">
+                                    <span class="m-label">Distance</span>
+                                    <span class="m-val" id="res-dist">--</span>
+                                </div>
+                                <div class="metric-pill">
+                                    <span class="m-label">Transfers</span>
+                                    <span class="m-val" id="res-transfers">--</span>
+                                </div>
+                            </div>
+
+                            <div class="comparison-box" id="comparison-details" style="display: none;"></div>
+
+                            <div class="itinerary-list" id="itinerary-steps"></div>
+                        </div>
+                    </section>
+
+                    <!-- Tab 2: Demand & Congestion Simulation -->
+                    <section class="tab-pane" id="tab-demand">
+                        <div class="panel-header">
+                            <h2>BPR Congestion Simulator</h2>
+                            <p class="panel-desc">Bureau of Public Roads: T = T₀ × (1 + α(V/C)ᵝ)</p>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="select-window">Time-of-Day Window</label>
+                            <select id="select-window" class="form-select">
+                                <option value="morning">Morning Peak (07:00 - 09:30 AM)</option>
+                                <option value="midday">Midday Off-Peak (11:00 AM - 02:00 PM)</option>
+                                <option value="evening">Evening Peak (04:30 - 07:30 PM)</option>
+                                <option value="night">Night Low Demand (10:00 PM - 04:00 AM)</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <div class="slider-header">
+                                <label for="range-passengers">Simulated Passenger Volume</label>
+                                <span class="slider-val" id="lbl-passengers">300 pax</span>
+                            </div>
+                            <input type="range" id="range-passengers" min="50" max="1000" step="50" value="300" class="form-range">
+                        </div>
+
+                        <div class="checkbox-group">
+                            <label class="custom-checkbox">
+                                <input type="checkbox" id="chk-congestion-heatmap" checked>
+                                <span class="chk-box"></span>
+                                <span class="chk-label">Display Congestion Heatmap on Map</span>
+                            </label>
+                        </div>
+
+                        <div class="action-row">
+                            <button class="btn btn-primary" id="btn-run-demand">Simulate Traffic & Congestion</button>
+                            <button class="btn btn-outline" id="btn-reset-congestion">Reset Flow</button>
+                        </div>
+
+                        <!-- Congestion Results -->
+                        <div class="results-card" id="demand-results" style="display: none;">
+                            <div class="results-meta">
+                                <div class="metric-pill">
+                                    <span class="m-label">Routed</span>
+                                    <span class="m-val" id="dem-routed">--</span>
+                                </div>
+                                <div class="metric-pill">
+                                    <span class="m-label">Avg Trip</span>
+                                    <span class="m-val" id="dem-avg-time">--</span>
+                                </div>
+                                <div class="metric-pill">
+                                    <span class="m-label">Avg Transfers</span>
+                                    <span class="m-val" id="dem-avg-transfers">--</span>
+                                </div>
+                            </div>
+
+                            <div class="bottleneck-table-container">
+                                <h3>Top Congested Corridors (V/C Ratio)</h3>
+                                <div id="bottleneck-table"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Tab 3: Emergency Disruption -->
+                    <section class="tab-pane" id="tab-disruption">
+                        <div class="panel-header">
+                            <h2>Emergency Disruption</h2>
+                            <p class="panel-desc">Track failure & consequential bus network diversion</p>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="select-disrupted-route">Select Disrupted Route to Block</label>
+                            <select id="select-disrupted-route" class="form-select"></select>
+                        </div>
+
+                        <div class="action-row">
+                            <button class="btn btn-danger" id="btn-simulate-disruption">Simulate Route Blockage</button>
+                            <button class="btn btn-outline" id="btn-restore-routes">Restore All Routes</button>
+                        </div>
+
+                        <div class="results-card" id="disruption-results" style="display: none;">
+                            <div class="disruption-status" id="disruption-status-badge"></div>
+                            <div class="results-meta">
+                                <div class="metric-pill">
+                                    <span class="m-label">Diverted</span>
+                                    <span class="m-val text-warning" id="dis-diverted">--</span>
+                                </div>
+                                <div class="metric-pill">
+                                    <span class="m-label">Extra Delay</span>
+                                    <span class="m-val text-danger" id="dis-delay">--</span>
+                                </div>
+                                <div class="metric-pill">
+                                    <span class="m-label">Unreachable</span>
+                                    <span class="m-val" id="dis-unreachable">--</span>
+                                </div>
+                            </div>
+                            <div id="disruption-bus-impact"></div>
+                        </div>
+                    </section>
+
+                    <!-- Tab 4: DSA Profiler & Complexity -->
+                    <section class="tab-pane" id="tab-profiler">
+                        <div class="panel-header">
+                            <h2>DSA Profiler & Complexity</h2>
+                            <p class="panel-desc">Microsecond latency benchmarking & theoretical analysis</p>
+                        </div>
+
+                        <div class="input-group">
+                            <div class="slider-header">
+                                <label for="range-queries">Query Batch Size (N)</label>
+                                <span class="slider-val" id="lbl-queries">1,000 queries</span>
+                            </div>
+                            <input type="range" id="range-queries" min="100" max="5000" step="100" value="1000" class="form-range">
+                        </div>
+
+                        <button class="btn btn-primary" id="btn-run-profile">Run Benchmark Suite</button>
+
+                        <div class="results-card" id="profile-results" style="display: none;">
+                            <div class="results-meta">
+                                <div class="metric-pill">
+                                    <span class="m-label">Mean Latency</span>
+                                    <span class="m-val text-success" id="prof-mean">--</span>
+                                </div>
+                                <div class="metric-pill">
+                                    <span class="m-label">Throughput</span>
+                                    <span class="m-val" id="prof-qps">--</span>
+                                </div>
+                                <div class="metric-pill">
+                                    <span class="m-label">P95 Latency</span>
+                                    <span class="m-val" id="prof-p95">--</span>
+                                </div>
+                            </div>
+
+                            <div class="percentiles-grid">
+                                <div class="perc-item"><span>Min</span><strong id="prof-min">--</strong></div>
+                                <div class="perc-item"><span>Median</span><strong id="prof-median">--</strong></div>
+                                <div class="perc-item"><span>P99</span><strong id="prof-p99">--</strong></div>
+                                <div class="perc-item"><span>Max</span><strong id="prof-max">--</strong></div>
+                            </div>
+                        </div>
+
+                        <!-- Space Complexity Architecture Card -->
+                        <div class="complexity-card">
+                            <h3>Space Complexity & Scaling Analysis</h3>
+                            <div class="complexity-comparison">
+                                <div class="comp-col">
+                                    <div class="comp-header">Adjacency List (Used)</div>
+                                    <div class="comp-formula">O(V + E)</div>
+                                    <div class="comp-stat">~ 1.8 KB RAM</div>
+                                    <div class="comp-desc">Sparse Graph optimal. Only allocates existing links.</div>
+                                </div>
+                                <div class="comp-vs">vs</div>
+                                <div class="comp-col">
+                                    <div class="comp-header">Adjacency Matrix</div>
+                                    <div class="comp-formula">O(V²)</div>
+                                    <div class="comp-stat">~ 15.6 KB RAM</div>
+                                    <div class="comp-desc">Allocates V×V table, >85% cells wasted as 0.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </aside>
+
+            <!-- Center Interactive Map Canvas -->
+            <main class="map-container" id="map-container">
+                <!-- Floating Map Controls HUD -->
+                <div class="map-hud">
+                    <div class="hud-group">
+                        <button class="hud-btn" id="btn-zoom-in" title="Zoom In">+</button>
+                        <button class="hud-btn" id="btn-zoom-out" title="Zoom Out">-</button>
+                        <button class="hud-btn" id="btn-zoom-reset" title="Reset View">Reset</button>
+                    </div>
+
+                    <div class="hud-legend">
+                        <div class="leg-item"><span class="leg-icon icon-train"></span><span>Train Line</span></div>
+                        <div class="leg-item"><span class="leg-icon icon-bus"></span><span>Bus Route</span></div>
+                        <div class="leg-item"><span class="leg-icon icon-hub"></span><span>Interchange Hub</span></div>
+                        <div class="leg-item"><span class="leg-icon icon-route"></span><span>Optimal Path</span></div>
+                    </div>
+                </div>
+
+                <!-- SVG Canvas Container -->
+                <div class="svg-viewport" id="svg-viewport">
+                    <svg id="transit-svg" viewBox="0 0 1200 880" width="100%" height="100%">
+                        <!-- Dynamically populated by app.js -->
+                    </svg>
+                </div>
+
+                <!-- Floating Tooltip -->
+                <div class="map-tooltip" id="map-tooltip" style="display: none;"></div>
+            </main>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
