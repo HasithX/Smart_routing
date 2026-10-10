@@ -7,6 +7,8 @@ test_runner
 # Editor and OS files
 .vscode/
 .idea/
+.clangd
+compile_flags.txt
 *.swp
 *.swo
 *~
@@ -18,3 +20,5 @@ test_runner
 
 # Documentation and submission reports folder
 doc/
+document/
+*.zip

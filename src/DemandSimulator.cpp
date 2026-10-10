@@ -12,6 +12,8 @@
 #include <utility>
 #include <vector>
 
+using namespace std;
+
 namespace {
 
 double volumeToCapacity(const Edge& edge)
@@ -41,7 +43,7 @@ bool sameRoute(const RouteResult& a, const RouteResult& b)
         return false;
     }
 
-    for (std::size_t i = 0; i < a.legs.size(); ++i) {
+    for (size_t i = 0; i < a.legs.size(); ++i) {
         if (!isSameLeg(a.legs[i], b.legs[i])) {
             return false;
         }
@@ -71,11 +73,7 @@ void addPassengerFlow(MultiModalGraph& graph, const RouteResult& route)
 
 } // namespace
 
-// ============================================================
-// TIME WINDOW TO STRING
-// ============================================================
-
-std::string timeWindowToString(TimeWindow tw)
+string timeWindowToString(TimeWindow tw)
 {
     switch (tw) {
         case TimeWindow::MORNING_PEAK:
@@ -94,38 +92,34 @@ std::string timeWindowToString(TimeWindow tw)
     return "Standard Window";
 }
 
-// ============================================================
-// GENERATE PASSENGER TRIPS
-// ============================================================
-
-std::vector<PassengerTrip> DemandSimulator::generateTrips(
+vector<PassengerTrip> DemandSimulator::generateTrips(
     TimeWindow window,
     int totalPassengers,
     unsigned int seed)
 {
-    std::vector<PassengerTrip> trips;
+    vector<PassengerTrip> trips;
 
     if (totalPassengers <= 0) {
         return trips;
     }
 
-    std::mt19937 rng(seed);
+    mt19937 rng(seed);
 
-    std::vector<std::string> allNodeIds;
-    std::vector<std::string> residentialNodes;
-    std::vector<std::string> commercialNodes;
+    vector<string> allNodeIds;
+    vector<string> residentialNodes;
+    vector<string> commercialNodes;
 
-    // Classify stations by zone.
+    // group by zone
     for (const auto& pair : graph.nodes) {
         allNodeIds.push_back(pair.first);
 
-        std::string zone = pair.second.zone;
-        std::transform(
+        string zone = pair.second.zone;
+        transform(
             zone.begin(),
             zone.end(),
             zone.begin(),
             [](unsigned char c) {
-                return static_cast<char>(std::tolower(c));
+                return static_cast<char>(tolower(c));
             });
 
         if (zone == "residential") {
@@ -139,7 +133,6 @@ std::vector<PassengerTrip> DemandSimulator::generateTrips(
         }
     }
 
-    // Fallback so the simulator still works with a different dataset.
     if (residentialNodes.empty()) {
         residentialNodes = allNodeIds;
     }
@@ -152,26 +145,26 @@ std::vector<PassengerTrip> DemandSimulator::generateTrips(
         return trips;
     }
 
-    std::uniform_real_distribution<double> probability(0.0, 1.0);
-    std::uniform_int_distribution<int> minute(0, 59);
+    uniform_real_distribution<double> probability(0.0, 1.0);
+    uniform_int_distribution<int> minute(0, 59);
 
-    trips.reserve(static_cast<std::size_t>(totalPassengers));
+    trips.reserve(static_cast<size_t>(totalPassengers));
 
     for (int i = 0; i < totalPassengers; ++i) {
         char buffer[32];
 
-        std::snprintf(
+        snprintf(
             buffer,
             sizeof(buffer),
             "PX_%04d",
             i + 1
         );
 
-        std::string origin;
-        std::string destination;
-        std::string departureTime;
+        string origin;
+        string destination;
+        string departureTime;
 
-        // Morning: 80% residential -> work/commercial.
+        // morning commute
         if (window == TimeWindow::MORNING_PEAK) {
             if (probability(rng) < 0.80) {
                 origin = residentialNodes[
@@ -191,7 +184,7 @@ std::vector<PassengerTrip> DemandSimulator::generateTrips(
                 ];
             }
 
-            std::snprintf(
+            snprintf(
                 buffer,
                 sizeof(buffer),
                 "07:%02d AM",
@@ -200,7 +193,7 @@ std::vector<PassengerTrip> DemandSimulator::generateTrips(
             departureTime = buffer;
         }
 
-        // Evening: 80% commercial/work -> residential.
+        // evening commute
         else if (window == TimeWindow::EVENING_PEAK) {
             if (probability(rng) < 0.80) {
                 origin = commercialNodes[
@@ -220,7 +213,7 @@ std::vector<PassengerTrip> DemandSimulator::generateTrips(
                 ];
             }
 
-            std::snprintf(
+            snprintf(
                 buffer,
                 sizeof(buffer),
                 "05:%02d PM",
@@ -229,7 +222,7 @@ std::vector<PassengerTrip> DemandSimulator::generateTrips(
             departureTime = buffer;
         }
 
-        // Midday: distributed/random demand.
+        // midday
         else if (window == TimeWindow::MIDDAY_OFF_PEAK) {
             origin = allNodeIds[
                 rng() % allNodeIds.size()
@@ -239,7 +232,7 @@ std::vector<PassengerTrip> DemandSimulator::generateTrips(
                 rng() % allNodeIds.size()
             ];
 
-            std::snprintf(
+            snprintf(
                 buffer,
                 sizeof(buffer),
                 "01:%02d PM",
@@ -248,7 +241,7 @@ std::vector<PassengerTrip> DemandSimulator::generateTrips(
             departureTime = buffer;
         }
 
-        // Night: sparse/random demand.
+        // night
         else {
             origin = allNodeIds[
                 rng() % allNodeIds.size()
@@ -258,7 +251,7 @@ std::vector<PassengerTrip> DemandSimulator::generateTrips(
                 rng() % allNodeIds.size()
             ];
 
-            std::snprintf(
+            snprintf(
                 buffer,
                 sizeof(buffer),
                 "11:%02d PM",
@@ -267,22 +260,14 @@ std::vector<PassengerTrip> DemandSimulator::generateTrips(
             departureTime = buffer;
         }
 
-        // Never create a trip from a station to itself.
         while (origin == destination) {
             destination = allNodeIds[
                 rng() % allNodeIds.size()
             ];
         }
 
-        std::snprintf(
-            buffer,
-            sizeof(buffer),
-            "PX_%04d",
-            i + 1
-        );
-
         trips.push_back({
-            std::string(buffer),
+            string(buffer),
             origin,
             destination,
             departureTime,
@@ -292,10 +277,6 @@ std::vector<PassengerTrip> DemandSimulator::generateTrips(
 
     return trips;
 }
-
-// ============================================================
-// SIMULATE ONE TIME WINDOW
-// ============================================================
 
 SimulationResult DemandSimulator::simulateTimeWindow(
     TimeWindow window,
@@ -342,18 +323,18 @@ SimulationResult DemandSimulator::simulateTimeWindow(
 
     result.avgTravelTimeMin =
         routed > 0
-        ? std::round((totalTravelTime / routed) * 100.0) / 100.0
+        ? round((totalTravelTime / routed) * 100.0) / 100.0
         : 0.0;
 
     result.avgTransfersPerTrip =
         routed > 0
-        ? std::round(
+        ? round(
               (static_cast<double>(totalTransfers) / routed) * 100.0
           ) / 100.0
         : 0.0;
 
-    // Rank the five most congested corridors by V/C ratio.
-    std::vector<Edge> allEdges;
+    // find most congested edges
+    vector<Edge> allEdges;
 
     for (const auto& pair : graph.adjList) {
         for (const auto& edge : pair.second) {
@@ -361,7 +342,7 @@ SimulationResult DemandSimulator::simulateTimeWindow(
         }
     }
 
-    std::sort(
+    sort(
         allEdges.begin(),
         allEdges.end(),
         [](const Edge& a, const Edge& b) {
@@ -384,7 +365,7 @@ SimulationResult DemandSimulator::simulateTimeWindow(
             transportModeToString(edge.mode),
             edge.currentFlow,
             edge.capacity,
-            std::round(ratio * 100.0) / 100.0,
+            round(ratio * 100.0) / 100.0,
             edge.getEffectiveTravelTime(),
             edge.baseTimeMin
         });
@@ -393,19 +374,15 @@ SimulationResult DemandSimulator::simulateTimeWindow(
     return result;
 }
 
-// ============================================================
-// 24-HOUR DYNAMIC DEMAND
-// ============================================================
-
-std::vector<int> DemandSimulator::generate24HourDemand(int baseDemand)
+vector<int> DemandSimulator::generate24HourDemand(int baseDemand)
 {
-    std::vector<int> demand(24, 0);
+    vector<int> demand(24, 0);
 
     if (baseDemand <= 0) {
         return demand;
     }
 
-    // Relative demand multiplier for each hour.
+    // hourly multipliers
     const double multipliers[24] = {
         0.15, 0.10, 0.08, 0.08, 0.10, 0.15,
         0.30, 0.70, 1.00, 0.75, 0.55, 0.50,
@@ -415,32 +392,27 @@ std::vector<int> DemandSimulator::generate24HourDemand(int baseDemand)
 
     for (int hour = 0; hour < 24; ++hour) {
         demand[hour] = static_cast<int>(
-            std::round(baseDemand * multipliers[hour])
+            round(baseDemand * multipliers[hour])
         );
     }
 
     return demand;
 }
 
-// ============================================================
-// EMERGENCY DISRUPTION SIMULATOR
-// ============================================================
-
-void DemandSimulator::simulateDisruption(const std::string& routeId)
+void DemandSimulator::simulateDisruption(const string& routeId)
 {
-    std::cout << "\n"
-              << "============================================================\n"
-              << "       EMERGENCY TRANSPORT DISRUPTION SIMULATOR\n"
-              << "============================================================\n"
-              << "Disrupted Route: " << routeId << "\n";
+    cout << "\n"
+         << "============================================================\n"
+         << "       EMERGENCY TRANSPORT DISRUPTION SIMULATOR\n"
+         << "============================================================\n"
+         << "Disrupted Route: " << routeId << "\n";
 
-    // Because the graph creates a reverse edge with "_REV", block
-    // both directions of the selected physical route.
-    const std::string reverseRouteId = routeId + "_REV";
+    // block reverse edge too
+    const string reverseRouteId = routeId + "_REV";
 
     bool routeFound = false;
-    std::string routeSource;
-    std::string routeTarget;
+    string routeSource;
+    string routeTarget;
     TransportMode disruptedMode = TransportMode::TRAIN;
     double baseTravelTime = 0.0;
 
@@ -464,18 +436,16 @@ void DemandSimulator::simulateDisruption(const std::string& routeId)
     }
 
     if (!routeFound) {
-        std::cout << "\nERROR: Route '" << routeId
-                  << "' was not found.\n";
+        cout << "\nERROR: Route '" << routeId
+             << "' was not found.\n";
         return;
     }
 
-    std::cout << "Route: " << routeSource
-              << " -> " << routeTarget << "\n"
-              << "Mode: " << transportModeToString(disruptedMode) << "\n"
-              << "Base Travel Time: " << baseTravelTime << " min\n";
+    cout << "Route: " << routeSource
+         << " -> " << routeTarget << "\n"
+         << "Mode: " << transportModeToString(disruptedMode) << "\n"
+         << "Base Travel Time: " << baseTravelTime << " min\n";
 
-    // Use the same 300 passenger trips in both scenarios so the
-    // comparison is fair.
     const int passengerCount = 300;
 
     auto trips = generateTrips(
@@ -486,11 +456,10 @@ void DemandSimulator::simulateDisruption(const std::string& routeId)
 
     MultiModalDijkstra router(graph);
 
-    // ---------------- NORMAL SCENARIO ----------------
-
+    // baseline routing
     graph.resetAllCongestion();
 
-    std::vector<RouteResult> normalRoutes;
+    vector<RouteResult> normalRoutes;
     normalRoutes.reserve(trips.size());
 
     int normalRouted = 0;
@@ -515,9 +484,8 @@ void DemandSimulator::simulateDisruption(const std::string& routeId)
         ? normalTotalTime / normalRouted
         : 0.0;
 
-    // ---------------- BLOCK THE FAILED ROUTE ----------------
-
-    std::vector<std::pair<std::string, Edge>> removedEdges;
+    // remove edge temporarily
+    vector<pair<string, Edge>> removedEdges;
 
     for (auto& pair : graph.adjList) {
         auto& edges = pair.second;
@@ -536,11 +504,10 @@ void DemandSimulator::simulateDisruption(const std::string& routeId)
         }
     }
 
-    std::cout << "\nSTATUS: Route " << routeId
-              << " is BLOCKED in both directions.\n";
+    cout << "\nSTATUS: Route " << routeId
+         << " is BLOCKED in both directions.\n";
 
-    // ---------------- DISRUPTED SCENARIO ----------------
-
+    // simulate disruption
     graph.resetAllCongestion();
 
     int disruptedRouted = 0;
@@ -549,7 +516,7 @@ void DemandSimulator::simulateDisruption(const std::string& routeId)
     int passengersUsingBus = 0;
     double disruptedTotalTime = 0.0;
 
-    for (std::size_t i = 0; i < trips.size(); ++i) {
+    for (size_t i = 0; i < trips.size(); ++i) {
         const auto& trip = trips[i];
 
         RouteResult route = router.findShortestPath(
@@ -565,8 +532,7 @@ void DemandSimulator::simulateDisruption(const std::string& routeId)
         ++disruptedRouted;
         disruptedTotalTime += route.totalTimeMin;
 
-        // A passenger is counted as diverted only when the route
-        // selected after the failure differs from the normal route.
+        // check if passenger path changed
         if (i < normalRoutes.size() &&
             normalRoutes[i].isReachable() &&
             !sameRoute(normalRoutes[i], route)) {
@@ -596,24 +562,22 @@ void DemandSimulator::simulateDisruption(const std::string& routeId)
     const double additionalDelay =
         disruptedAverageTime - normalAverageTime;
 
-    // ---------------- DISPLAY RESULTS ----------------
+    // display results
+    cout << "\n---------------- DISRUPTION RESULTS ----------------\n"
+         << "Passengers Simulated      : " << passengerCount << "\n"
+         << "Normally Routed           : " << normalRouted << "\n"
+         << "Routed After Disruption   : " << disruptedRouted << "\n"
+         << "Unreachable After Failure : " << disruptedUnreachable << "\n"
+         << "Passengers Diverted       : " << divertedPassengers << "\n"
+         << "Passengers Using Bus      : " << passengersUsingBus << "\n";
 
-    std::cout << "\n---------------- DISRUPTION RESULTS ----------------\n"
-              << "Passengers Simulated      : " << passengerCount << "\n"
-              << "Normally Routed           : " << normalRouted << "\n"
-              << "Routed After Disruption   : " << disruptedRouted << "\n"
-              << "Unreachable After Failure : " << disruptedUnreachable << "\n"
-              << "Passengers Diverted       : " << divertedPassengers << "\n"
-              << "Passengers Using Bus      : " << passengersUsingBus << "\n";
+    cout << fixed << setprecision(2)
+         << "Normal Average Time       : " << normalAverageTime << " min\n"
+         << "Disrupted Average Time    : " << disruptedAverageTime << " min\n"
+         << "Additional Average Delay  : " << additionalDelay << " min\n";
 
-    std::cout << std::fixed << std::setprecision(2)
-              << "Normal Average Time       : " << normalAverageTime << " min\n"
-              << "Disrupted Average Time    : " << disruptedAverageTime << " min\n"
-              << "Additional Average Delay  : " << additionalDelay << " min\n";
-
-    // ---------------- ALTERNATIVE BUS CONGESTION ----------------
-
-    std::vector<Edge> busEdges;
+    // alternative bus congestion
+    vector<Edge> busEdges;
 
     for (const auto& pair : graph.adjList) {
         for (const auto& edge : pair.second) {
@@ -624,7 +588,7 @@ void DemandSimulator::simulateDisruption(const std::string& routeId)
         }
     }
 
-    std::sort(
+    sort(
         busEdges.begin(),
         busEdges.end(),
         [](const Edge& a, const Edge& b) {
@@ -632,7 +596,7 @@ void DemandSimulator::simulateDisruption(const std::string& routeId)
         }
     );
 
-    std::cout << "\n--------- MOST CONGESTED ALTERNATIVE BUS ROUTES ---------\n";
+    cout << "\n--------- MOST CONGESTED ALTERNATIVE BUS ROUTES ---------\n";
 
     int displayed = 0;
 
@@ -643,33 +607,31 @@ void DemandSimulator::simulateDisruption(const std::string& routeId)
 
         double ratio = volumeToCapacity(edge);
 
-        std::cout << "\n"
-                  << edge.routeId << " | "
-                  << edge.source << " -> " << edge.target << "\n"
-                  << "  Flow / Capacity : "
-                  << edge.currentFlow << " / " << edge.capacity
-                  << " (" << static_cast<int>(ratio * 100.0) << "%)\n"
-                  << "  Travel Time     : "
-                  << edge.baseTimeMin << " -> "
-                  << edge.getEffectiveTravelTime() << " min\n";
+        cout << "\n"
+             << edge.routeId << " | "
+             << edge.source << " -> " << edge.target << "\n"
+             << "  Flow / Capacity : "
+             << edge.currentFlow << " / " << edge.capacity
+             << " (" << static_cast<int>(ratio * 100.0) << "%)\n"
+             << "  Travel Time     : "
+             << edge.baseTimeMin << " -> "
+             << edge.getEffectiveTravelTime() << " min\n";
 
         ++displayed;
     }
 
     if (displayed == 0) {
-        std::cout << "No alternative bus congestion detected.\n";
+        cout << "No alternative bus congestion detected.\n";
     }
 
-    // ---------------- RESTORE GRAPH ----------------
-
+    // restore graph
     for (const auto& item : removedEdges) {
         graph.adjList[item.first].push_back(item.second);
     }
 
-    // Always leave the graph clean after the simulation.
     graph.resetAllCongestion();
 
-    std::cout << "\nSTATUS: Route " << routeId
-              << " restored.\n"
-              << "============================================================\n";
+    cout << "\nSTATUS: Route " << routeId
+         << " restored.\n"
+         << "============================================================\n";
 }

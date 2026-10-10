@@ -2,72 +2,73 @@
 #include <sstream>
 #include <iomanip>
 
-RouteResult RoutePlanner::planJourney(const std::string& originId,
-                                      const std::string& destinationId,
+using namespace std;
+
+RouteResult RoutePlanner::planJourney(const string& originId,
+                                      const string& destinationId,
                                       RoutingPreference preference) const {
     return router.findOptimalPath(originId, destinationId, preference);
 }
 
-std::string RoutePlanner::formatItinerary(const RouteResult& result) const {
+string RoutePlanner::formatItinerary(const RouteResult& result) const {
     if (!result.isReachable()) {
         return "No public transit route found between " + result.origin + " and " + result.destination + ".\n";
     }
 
     const Location* origNode = graph.getNode(result.origin);
     const Location* destNode = graph.getNode(result.destination);
-    std::string origName = origNode ? origNode->name : result.origin;
-    std::string destName = destNode ? destNode->name : result.destination;
+    string origName = origNode ? origNode->name : result.origin;
+    string destName = destNode ? destNode->name : result.destination;
 
-    std::stringstream ss;
-    ss << std::string(68, '=') << "\n";
+    stringstream ss;
+    ss << string(68, '=') << "\n";
     ss << " SMART CITY TRANSIT ITINERARY: " << origName << " -> " << destName << "\n";
     ss << " Routing Criteria   : " << routingPreferenceToString(result.preference) << "\n";
-    ss << std::string(68, '=') << "\n";
-    ss << std::fixed << std::setprecision(1);
+    ss << string(68, '=') << "\n";
+    ss << fixed << setprecision(1);
     ss << " Total Travel Time   : " << result.totalTimeMin << " mins (incl. transfers)\n";
     ss << " Total Distance      : " << result.totalDistanceKm << " km\n";
     ss << " Number of Transfers : " << result.transferCount << " transfer(s)\n";
-    ss << std::string(68, '-') << "\n";
+    ss << string(68, '-') << "\n";
     ss << " Step-by-step transit directions:\n";
 
     int stepNum = 1;
     for (const auto& leg : result.legs) {
         const Location* srcNode = graph.getNode(leg.source);
         const Location* tgtNode = graph.getNode(leg.target);
-        std::string srcName = srcNode ? srcNode->name : leg.source;
-        std::string tgtName = tgtNode ? tgtNode->name : leg.target;
+        string srcName = srcNode ? srcNode->name : leg.source;
+        string tgtName = tgtNode ? tgtNode->name : leg.target;
 
         if (leg.isTransferBefore) {
             ss << "   [" << stepNum++ << "] TRANSFER: Change platforms / Walk at '"
                << srcName << "' (+" << leg.transferPenaltyMin << " min penalty)\n";
         }
 
-        std::string modeSymbol = (leg.mode == TransportMode::TRAIN) ? "[Train]" : "[Bus]";
+        string modeSymbol = (leg.mode == TransportMode::TRAIN) ? "[Train]" : "[Bus]";
         ss << "   [" << stepNum++ << "] " << modeSymbol << " from '" << srcName << "' to '"
            << tgtName << "' (" << leg.distanceKm << " km | " << leg.travelTimeMin << " mins)\n";
     }
 
-    ss << std::string(68, '=') << "\n";
+    ss << string(68, '=') << "\n";
     return ss.str();
 }
 
-std::string RoutePlanner::comparePreferences(const std::string& originId, const std::string& destinationId) const {
+string RoutePlanner::comparePreferences(const string& originId, const string& destinationId) const {
     RouteResult fast = planJourney(originId, destinationId, RoutingPreference::FASTEST_TIME);
     RouteResult direct = planJourney(originId, destinationId, RoutingPreference::MINIMUM_TRANSFERS);
 
     const Location* origNode = graph.getNode(originId);
     const Location* destNode = graph.getNode(destinationId);
-    std::string origName = origNode ? origNode->name : originId;
-    std::string destName = destNode ? destNode->name : destinationId;
+    string origName = origNode ? origNode->name : originId;
+    string destName = destNode ? destNode->name : destinationId;
 
-    std::stringstream ss;
-    ss << "\n" << std::string(72, '=') << "\n";
-    ss << " PARETO MULTI-CRITERIA ROUTING COMPARISON (Hasitha's Algorithmic Engine)\n";
-    ss << " Journey: " << origName << " -> " << destName << "\n";
-    ss << std::string(72, '=') << "\n";
-    ss << std::fixed << std::setprecision(1);
+    stringstream ss;
+    ss << "\n" << string(68, '=') << "\n";
+    ss << " ROUTING COMPARISON: " << origName << " -> " << destName << "\n";
+    ss << string(68, '=') << "\n";
+    ss << fixed << setprecision(1);
 
-    ss << " [Criteria 1: Fastest Travel Time]\n";
+    ss << " [1. Fastest Travel Time]\n";
     if (fast.isReachable()) {
         ss << "   • Travel Time : " << fast.totalTimeMin << " mins\n";
         ss << "   • Distance    : " << fast.totalDistanceKm << " km\n";
@@ -80,7 +81,7 @@ std::string RoutePlanner::comparePreferences(const std::string& originId, const 
         ss << "   • Unreachable\n";
     }
 
-    ss << "\n [Criteria 2: Minimum Transfers (Elderly / Luggage Friendly)]\n";
+    ss << "\n [2. Minimum Transfers (Direct Route Priority)]\n";
     if (direct.isReachable()) {
         ss << "   • Travel Time : " << direct.totalTimeMin << " mins\n";
         ss << "   • Distance    : " << direct.totalDistanceKm << " km\n";
@@ -93,17 +94,17 @@ std::string RoutePlanner::comparePreferences(const std::string& originId, const 
         ss << "   • Unreachable\n";
     }
 
-    ss << std::string(72, '-') << "\n";
+    ss << string(68, '-') << "\n";
     if (fast.isReachable() && direct.isReachable()) {
         if (fast.transferCount != direct.transferCount) {
             double timeDiff = direct.totalTimeMin - fast.totalTimeMin;
-            ss << " Pareto Trade-off Insight: Minimum transfers route saves "
-               << (fast.transferCount - direct.transferCount) << " transfer(s) at the cost of "
-               << timeDiff << " additional minutes.\n";
+            ss << " Trade-off: Minimum transfers saves "
+               << (fast.transferCount - direct.transferCount) << " transfer(s) (+ "
+               << timeDiff << " mins longer).\n";
         } else {
-            ss << " Both criteria converge on the same globally optimal path for this OD pair.\n";
+            ss << " Both criteria use the same optimal route.\n";
         }
     }
-    ss << std::string(72, '=') << "\n";
+    ss << string(68, '=') << "\n";
     return ss.str();
 }

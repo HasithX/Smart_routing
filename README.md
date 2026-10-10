@@ -1,5 +1,4 @@
 # 🚆 Smart City Multi-Modal Public Transit System (C++17)
-> **Course**: UCSC IS 2202 / IS 2110 (Advanced Data Structures and Algorithms)  
 > **Topic**: Graph Theory Modeling & Algorithmic Profiling for a Smart City Public Transit System  
 > **Language & Standard**: C++17 (Compiled with `g++ -O3 -Wall`)
 
@@ -17,14 +16,14 @@ This project models an imaginative future smart city where **only public transpo
 
 ---
 
-## 👥 Group Members & Work Breakdown (4 Members)
+## 🧩 Core Architecture & Module Breakdown
 
-| Member | Primary Role | Core Modules & Responsibilities |
+| Module | Purpose | Key Components & Files |
 |---|---|---|
-| **Member 1 (Lead Algorithmic Engineer)** | **Core Routing Engine (Hardest Part)** | • State-Augmented Dijkstra implementation (`include/Dijkstra.h`, `src/Dijkstra.cpp`)<br>• Min-Heap priority queue optimization ($O((E \cdot M) \log(V \cdot M))$)<br>• Transfer penalty logic & Route Planner (`include/RoutePlanner.h`, `src/RoutePlanner.cpp`)<br>• Dynamic congestion integration |
-| **Member 2** | **City Graph & Network Architecture** | • Node (Location) and Edge data models (`include/Location.h`, `include/Edge.h`)<br>• Adjacency List Multi-Modal Graph data structure (`include/Graph.h`, `src/Graph.cpp`)<br>• CSV dataset ingestion & city topology design (`data/stations.csv`, `data/routes.csv`) |
-| **Member 3** | **Passenger Demand & Traffic Simulator** | • Time-of-day demand matrix modeling (`include/DemandSimulator.h`, `src/DemandSimulator.cpp`)<br>• Peak vs Off-peak passenger trip generation<br>• Urban traffic simulation and edge congestion feedback |
-| **Member 4** | **Benchmarking, Profiling & Visualization** | • Algorithmic profiling with `std::chrono` (`include/Profiler.h`, `src/Profiler.cpp`)<br>• Scaling benchmarks across $N=100$ to $25,000$ queries<br>• SVG vector transit map generator & Graphviz DOT exporter (`include/Visualizer.h`, `src/Visualizer.cpp`)<br>• Main CLI dashboard (`src/main.cpp`) |
+| **Core Routing Engine** | Optimal shortest path computation with mode-switching awareness | • State-Augmented Dijkstra implementation (`include/Dijkstra.h`, `src/Dijkstra.cpp`)<br>• Min-Heap priority queue optimization ($O((E \cdot M) \log(V \cdot M))$)<br>• Transfer penalty logic & Route Planner (`include/RoutePlanner.h`, `src/RoutePlanner.cpp`)<br>• Dynamic congestion integration |
+| **City Graph & Network Architecture** | Multi-modal network topology modeling | • Node (Location) and Edge data models (`include/Location.h`, `include/Edge.h`)<br>• Adjacency List Multi-Modal Graph data structure (`include/Graph.h`, `src/Graph.cpp`)<br>• CSV dataset ingestion & city topology design (`data/stations.csv`, `data/routes.csv`) |
+| **Passenger Demand & Traffic Simulator** | Dynamic city demand & congestion model | • Time-of-day demand matrix modeling (`include/DemandSimulator.h`, `src/DemandSimulator.cpp`)<br>• Peak vs Off-peak passenger trip generation<br>• Urban traffic simulation and edge congestion feedback (BPR function) |
+| **Benchmarking, Profiling & Visualization** | Microsecond performance & visual outputs | • Algorithmic profiling with `chrono` (`include/Profiler.h`, `src/Profiler.cpp`)<br>• Scaling benchmarks across $N=100$ to $25,000$ queries<br>• SVG vector transit map generator & Graphviz DOT exporter (`include/Visualizer.h`, `src/Visualizer.cpp`)<br>• Main CLI dashboard (`src/main.cpp`) |
 
 ---
 
@@ -88,7 +87,7 @@ make clean
 
 ---
 
-## 🧠 Viva Preparation Points for UCSC IS 2202/2110
+## 🧠 Key Algorithmic & Technical Architecture Decisions
 
 1. **Why Adjacency List ($O(V + E)$) instead of Adjacency Matrix ($O(V^2)$)?**
    - The transit network is sparse ($|E| \ll |V|^2$). For 12 stations, an adjacency matrix allocates 144 cells, whereas the real network has only 32 edges. Adjacency lists minimize RAM and allow iterating over neighbors in $O(\text{deg}(v))$.
@@ -104,31 +103,30 @@ make clean
 
 ---
 
-## 🛠️ Team Git Collaboration & Branching Guide
+## 🛠️ Git Collaboration & Branching Workflow
 
-This section explains how our 4 group members collaborate cleanly using Git branches without conflicts.
+This section outlines the standard Git feature branch workflow used to collaborate cleanly without merge conflicts.
 
-### 📌 Golden Rules for the Team:
+### 📌 Development Best Practices:
 1. **Never commit directly to `main` without testing!**
-2. Always create a personal feature branch for your assigned module.
-3. Run `make clean` before staging/committing to prevent temporary files from entering Git.
+2. Always create a personal feature branch for new modules or bug fixes.
+3. Run `make clean` before staging/committing to prevent binary/temporary files from entering Git.
 
 ---
 
-### 🔄 Standard Workflow for Group Members (Step-by-Step)
+### 🔄 Standard Workflow (Step-by-Step)
 
-#### Step 1: Update your local `main` branch with the latest code
+#### Step 1: Update local `main` with latest code
 ```bash
 git checkout main
 git pull origin main
 ```
 
-#### Step 2: Create and switch to your feature branch (use your name)
+#### Step 2: Create a feature branch
 ```bash
-# Format: git checkout -b feature/<member-name>-<task>
-# Examples:
-git checkout -b feature/kamal-graph-connectivity
-
+# Format: git checkout -b feature/<branch-name>
+# Example:
+git checkout -b feature/graph-connectivity
 ```
 
 #### Step 3: Implement your code and test
@@ -158,7 +156,7 @@ git commit -m "feat(module): add BFS connectivity validation and custom routes"
 
 #### Step 6: Push your feature branch to GitHub
 ```bash
-git push -u origin feature/<member-name>-<task>
+git push -u origin feature/<feature-name>
 ```
 
 #### Step 7: Merge into `main` (Pull Request)

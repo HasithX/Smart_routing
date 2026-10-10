@@ -6,10 +6,12 @@
 #include <queue>
 #include <unordered_set>
 
+using namespace std;
+
 namespace {
-    std::string trim(const std::string& str) {
+    string trim(const string& str) {
         size_t first = str.find_first_not_of(" \t\r\n");
-        if (first == std::string::npos) return "";
+        if (first == string::npos) return "";
         size_t last = str.find_last_not_of(" \t\r\n");
         return str.substr(first, (last - first + 1));
     }
@@ -18,14 +20,14 @@ namespace {
 void MultiModalGraph::addNode(const Location& node) {
     if (nodes.find(node.id) == nodes.end()) {
         nodes[node.id] = node;
-        adjList[node.id] = std::vector<Edge>();
+        adjList[node.id] = vector<Edge>();
     }
 }
 
 void MultiModalGraph::addEdge(const Edge& edge, bool bidirectional) {
     if (nodes.find(edge.source) == nodes.end() || nodes.find(edge.target) == nodes.end()) {
-        std::cerr << "Warning: Cannot add edge " << edge.routeId 
-                  << ". Both endpoints must exist in graph." << std::endl;
+        cerr << "Warning: Cannot add edge " << edge.routeId 
+             << ". Both endpoints must exist in graph." << endl;
         return;
     }
 
@@ -46,8 +48,8 @@ void MultiModalGraph::addEdge(const Edge& edge, bool bidirectional) {
     }
 }
 
-const std::vector<Edge>& MultiModalGraph::getNeighbors(const std::string& nodeId) const {
-    static const std::vector<Edge> emptyList;
+const vector<Edge>& MultiModalGraph::getNeighbors(const string& nodeId) const {
+    static const vector<Edge> emptyList;
     auto it = adjList.find(nodeId);
     if (it != adjList.end()) {
         return it->second;
@@ -55,7 +57,7 @@ const std::vector<Edge>& MultiModalGraph::getNeighbors(const std::string& nodeId
     return emptyList;
 }
 
-const Location* MultiModalGraph::getNode(const std::string& nodeId) const {
+const Location* MultiModalGraph::getNode(const string& nodeId) const {
     auto it = nodes.find(nodeId);
     if (it != nodes.end()) {
         return &(it->second);
@@ -68,15 +70,15 @@ bool MultiModalGraph::isConnected() const {
         return false;
     }
 
-    std::queue<std::string> stationsToVisit;
-    std::unordered_set<std::string> visited;
-    const std::string& startId = nodes.begin()->first;
+    queue<string> stationsToVisit;
+    unordered_set<string> visited;
+    const string& startId = nodes.begin()->first;
 
     stationsToVisit.push(startId);
     visited.insert(startId);
 
     while (!stationsToVisit.empty()) {
-        const std::string currentId = stationsToVisit.front();
+        const string currentId = stationsToVisit.front();
         stationsToVisit.pop();
 
         for (const Edge& edge : getNeighbors(currentId)) {
@@ -89,32 +91,31 @@ bool MultiModalGraph::isConnected() const {
     return visited.size() == nodes.size();
 }
 
-bool MultiModalGraph::loadFromCSV(const std::string& stationsPath, const std::string& routesPath) {
-    // 1. Load Stations
-    std::ifstream stFile(stationsPath);
+bool MultiModalGraph::loadFromCSV(const string& stationsPath, const string& routesPath) {
+    // load stations
+    ifstream stFile(stationsPath);
     if (!stFile.is_open()) {
-        std::cerr << "Error: Could not open stations CSV at " << stationsPath << std::endl;
+        cerr << "Error: Could not open stations CSV at " << stationsPath << endl;
         return false;
     }
 
-    std::string line;
-    // Skip header: id,name,type,zone,x,y
-    if (std::getline(stFile, line)) {
-        while (std::getline(stFile, line)) {
+    string line;
+    if (getline(stFile, line)) {
+        while (getline(stFile, line)) {
             line = trim(line);
             if (line.empty()) continue;
-            std::stringstream ss(line);
-            std::string id, name, typeStr, zone, xStr, yStr;
+            stringstream ss(line);
+            string id, name, typeStr, zone, xStr, yStr;
 
-            if (std::getline(ss, id, ',') &&
-                std::getline(ss, name, ',') &&
-                std::getline(ss, typeStr, ',') &&
-                std::getline(ss, zone, ',') &&
-                std::getline(ss, xStr, ',') &&
-                std::getline(ss, yStr, ',')) {
+            if (getline(ss, id, ',') &&
+                getline(ss, name, ',') &&
+                getline(ss, typeStr, ',') &&
+                getline(ss, zone, ',') &&
+                getline(ss, xStr, ',') &&
+                getline(ss, yStr, ',')) {
 
-                double x = std::stod(trim(xStr));
-                double y = std::stod(trim(yStr));
+                double x = stod(trim(xStr));
+                double y = stod(trim(yStr));
                 Location loc(trim(id), trim(name), stringToNodeType(trim(typeStr)), trim(zone), x, y);
                 addNode(loc);
             }
@@ -122,35 +123,34 @@ bool MultiModalGraph::loadFromCSV(const std::string& stationsPath, const std::st
     }
     stFile.close();
 
-    // 2. Load Routes
-    std::ifstream rtFile(routesPath);
+    // load routes
+    ifstream rtFile(routesPath);
     if (!rtFile.is_open()) {
-        std::cerr << "Error: Could not open routes CSV at " << routesPath << std::endl;
+        cerr << "Error: Could not open routes CSV at " << routesPath << endl;
         return false;
     }
 
-    // Skip header: route_id,source_id,target_id,mode,distance_km,base_time_min,capacity,bidirectional
-    if (std::getline(rtFile, line)) {
-        while (std::getline(rtFile, line)) {
+    if (getline(rtFile, line)) {
+        while (getline(rtFile, line)) {
             line = trim(line);
             if (line.empty()) continue;
-            std::stringstream ss(line);
-            std::string routeId, src, tgt, modeStr, distStr, timeStr, capStr, bidiStr;
+            stringstream ss(line);
+            string routeId, src, tgt, modeStr, distStr, timeStr, capStr, bidiStr;
 
-            if (std::getline(ss, routeId, ',') &&
-                std::getline(ss, src, ',') &&
-                std::getline(ss, tgt, ',') &&
-                std::getline(ss, modeStr, ',') &&
-                std::getline(ss, distStr, ',') &&
-                std::getline(ss, timeStr, ',') &&
-                std::getline(ss, capStr, ',') &&
-                std::getline(ss, bidiStr, ',')) {
+            if (getline(ss, routeId, ',') &&
+                getline(ss, src, ',') &&
+                getline(ss, tgt, ',') &&
+                getline(ss, modeStr, ',') &&
+                getline(ss, distStr, ',') &&
+                getline(ss, timeStr, ',') &&
+                getline(ss, capStr, ',') &&
+                getline(ss, bidiStr, ',')) {
 
-                double dist = std::stod(trim(distStr));
-                double time = std::stod(trim(timeStr));
-                int cap = std::stoi(trim(capStr));
-                std::string bidiClean = trim(bidiStr);
-                std::transform(bidiClean.begin(), bidiClean.end(), bidiClean.begin(), ::tolower);
+                double dist = stod(trim(distStr));
+                double time = stod(trim(timeStr));
+                int cap = stoi(trim(capStr));
+                string bidiClean = trim(bidiStr);
+                transform(bidiClean.begin(), bidiClean.end(), bidiClean.begin(), ::tolower);
                 bool bidi = (bidiClean == "true" || bidiClean == "1");
 
                 Edge edge(trim(routeId), trim(src), trim(tgt), stringToTransportMode(trim(modeStr)), dist, time, cap);

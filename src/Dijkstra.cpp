@@ -1,14 +1,16 @@
 #include "Dijkstra.h"
-#include <queue>
-#include <map>
-#include <limits>
 #include <algorithm>
 #include <cmath>
+#include <limits>
+#include <map>
+#include <queue>
 
-std::string routingPreferenceToString(RoutingPreference pref) {
+using namespace std;
+
+string routingPreferenceToString(RoutingPreference pref) {
     switch (pref) {
         case RoutingPreference::MINIMUM_TRANSFERS:
-            return "Minimum Transfers (Direct Route Priority)";
+            return "Minimum Transfers";
         case RoutingPreference::FASTEST_TIME:
         default:
             return "Fastest Travel Time";
@@ -18,25 +20,25 @@ std::string routingPreferenceToString(RoutingPreference pref) {
 namespace {
     struct PQElement {
         double cost;
-        std::string u;
-        int mode; // -1 = Start (no prior mode), 0 = BUS, 1 = TRAIN
+        string u;
+        int mode; // -1 = start, 0 = bus, 1 = train
 
         bool operator>(const PQElement& other) const {
-            return cost > other.cost; // Min-Heap ordering
+            return cost > other.cost;
         }
     };
 
     struct PredecessorRecord {
-        std::string prevU;
+        string prevU;
         int prevMode;
         Edge edgeUsed;
         bool isTransfer;
         double transferDelay;
     };
-}
+} // namespace
 
-RouteResult MultiModalDijkstra::findShortestPath(const std::string& originId,
-                                                 const std::string& destinationId,
+RouteResult MultiModalDijkstra::findShortestPath(const string& originId,
+                                                 const string& destinationId,
                                                  double customTransferPenalty) const {
     RouteResult result;
     result.origin = originId;
@@ -55,36 +57,28 @@ RouteResult MultiModalDijkstra::findShortestPath(const std::string& originId,
         return result;
     }
 
-    // Min-Heap Priority Queue
-    std::priority_queue<PQElement, std::vector<PQElement>, std::greater<PQElement>> pq;
+    priority_queue<PQElement, vector<PQElement>, greater<PQElement>> pq;
+    map<pair<string, int>, double> distances;
+    map<pair<string, int>, PredecessorRecord> predecessors;
 
-    // Distances map: State (NodeID, Mode) -> Min Cost
-    std::map<std::pair<std::string, int>, double> distances;
-
-    // Predecessors map: State -> Predecessor Record
-    std::map<std::pair<std::string, int>, PredecessorRecord> predecessors;
-
-    // Initial state: at origin with no prior transport mode (-1)
-    std::pair<std::string, int> startState = {originId, -1};
+    pair<string, int> startState = {originId, -1};
     distances[startState] = 0.0;
     pq.push({0.0, originId, -1});
 
-    std::pair<std::string, int> bestTerminalState = {"", -2};
-    double minDestCost = std::numeric_limits<double>::infinity();
+    pair<string, int> bestTerminalState = {"", -2};
+    double minDestCost = numeric_limits<double>::infinity();
 
     while (!pq.empty()) {
         PQElement current = pq.top();
         pq.pop();
 
-        std::pair<std::string, int> currState = {current.u, current.mode};
+        pair<string, int> currState = {current.u, current.mode};
 
-        // Pruning if a strictly lower cost path to this state was already processed
         auto itDist = distances.find(currState);
         if (itDist != distances.end() && current.cost > itDist->second) {
             continue;
         }
 
-        // Check if destination reached
         if (current.u == destinationId) {
             if (current.cost < minDestCost) {
                 minDestCost = current.cost;
@@ -93,15 +87,13 @@ RouteResult MultiModalDijkstra::findShortestPath(const std::string& originId,
             continue;
         }
 
-        // Expand outgoing edges from adjacency list
         for (const auto& edge : graph.getNeighbors(current.u)) {
             int edgeMode = (edge.mode == TransportMode::TRAIN) ? 1 : 0;
-            std::pair<std::string, int> nextState = {edge.target, edgeMode};
+            pair<string, int> nextState = {edge.target, edgeMode};
 
             bool isTransfer = false;
             double transferDelay = 0.0;
 
-            // Transfer occurs when transitioning between two valid different modes
             if (current.mode != -1 && current.mode != edgeMode) {
                 isTransfer = true;
                 transferDelay = penalty;
@@ -126,17 +118,16 @@ RouteResult MultiModalDijkstra::findShortestPath(const std::string& originId,
     }
 
     if (bestTerminalState.second == -2) {
-        // Destination unreachable
-        result.totalTimeMin = std::numeric_limits<double>::infinity();
+        result.totalTimeMin = numeric_limits<double>::infinity();
         return result;
     }
 
-    // Path & Leg Reconstruction in O(L)
-    std::vector<RouteLeg> legs;
-    std::vector<std::string> pathNodes;
+    // reconstruct path
+    vector<RouteLeg> legs;
+    vector<string> pathNodes;
     pathNodes.push_back(destinationId);
 
-    std::pair<std::string, int> currState = bestTerminalState;
+    pair<string, int> currState = bestTerminalState;
     double totalDistance = 0.0;
     int transferCount = 0;
     double totalPenalty = 0.0;
@@ -163,21 +154,21 @@ RouteResult MultiModalDijkstra::findShortestPath(const std::string& originId,
         currState = {rec.prevU, rec.prevMode};
     }
 
-    std::reverse(legs.begin(), legs.end());
-    std::reverse(pathNodes.begin(), pathNodes.end());
+    reverse(legs.begin(), legs.end());
+    reverse(pathNodes.begin(), pathNodes.end());
 
-    result.totalTimeMin = std::round(minDestCost * 100.0) / 100.0;
-    result.totalDistanceKm = std::round(totalDistance * 100.0) / 100.0;
+    result.totalTimeMin = round(minDestCost * 100.0) / 100.0;
+    result.totalDistanceKm = round(totalDistance * 100.0) / 100.0;
     result.transferCount = transferCount;
     result.totalTransferPenaltyMin = totalPenalty;
-    result.legs = std::move(legs);
-    result.pathNodes = std::move(pathNodes);
+    result.legs = move(legs);
+    result.pathNodes = move(pathNodes);
 
     return result;
 }
 
-RouteResult MultiModalDijkstra::findOptimalPath(const std::string& originId,
-                                                const std::string& destinationId,
+RouteResult MultiModalDijkstra::findOptimalPath(const string& originId,
+                                                const string& destinationId,
                                                 RoutingPreference preference) const {
     double penalty = (preference == RoutingPreference::MINIMUM_TRANSFERS) ? 35.0 : defaultTransferPenaltyMin;
     RouteResult res = findShortestPath(originId, destinationId, penalty);

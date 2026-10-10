@@ -7,6 +7,8 @@
 #include <vector>
 #include <string>
 
+using namespace std;
+
 struct GraphStats {
     int vertexCount;
     int totalEdges;
@@ -17,22 +19,18 @@ struct GraphStats {
 
 class MultiModalGraph {
 public:
-    // Vertices map: Node ID -> Location
-    std::unordered_map<std::string, Location> nodes;
-
-    // Adjacency List: Node ID -> List of Outgoing Edges
-    // Space Complexity: O(V + E)
-    std::unordered_map<std::string, std::vector<Edge>> adjList;
+    unordered_map<string, Location> nodes;
+    unordered_map<string, vector<Edge>> adjList;
 
     MultiModalGraph() = default;
 
     void addNode(const Location& node);
     void addEdge(const Edge& edge, bool bidirectional = true);
     
-    const std::vector<Edge>& getNeighbors(const std::string& nodeId) const;
-    const Location* getNode(const std::string& nodeId) const;
+    const vector<Edge>& getNeighbors(const string& nodeId) const;
+    const Location* getNode(const string& nodeId) const;
 
-    bool loadFromCSV(const std::string& stationsPath, const std::string& routesPath);
+    bool loadFromCSV(const string& stationsPath, const string& routesPath);
     bool isConnected() const;
     void resetAllCongestion();
     GraphStats getStats() const;

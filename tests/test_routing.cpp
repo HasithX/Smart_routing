@@ -3,6 +3,8 @@
 #include <iostream>
 #include <cassert>
 
+using namespace std;
+
 void testMultiModalRouting() {
     MultiModalGraph graph;
     graph.addNode(Location("A", "Station A", NodeType::TRAIN_STATION, "Suburbs", 0, 0));
@@ -16,8 +18,7 @@ void testMultiModalRouting() {
     // Direct Bus A -> C: 25 mins
     graph.addEdge(Edge("B2", "A", "C", TransportMode::BUS, 15.0, 25.0, 80), false);
 
-    // Test with default transfer penalty = 6 mins
-    // Route via B: Train(10) + Transfer(6) + Bus(5) = 21 mins (Wins over 25 mins)
+    // default transfer penalty
     MultiModalDijkstra router(graph, 6.0);
     RouteResult res = router.findShortestPath("A", "C");
 
@@ -27,9 +28,7 @@ void testMultiModalRouting() {
     assert(res.transferCount == 1);
     assert(res.totalTimeMin == 21.0);
 
-    // Test with high transfer penalty = 20 mins
-    // Route via B: Train(10) + Transfer(20) + Bus(5) = 35 mins
-    // Direct Bus: 25 mins (Wins over 35 mins)
+    // high transfer penalty
     MultiModalDijkstra highPenaltyRouter(graph, 20.0);
     RouteResult resDirect = highPenaltyRouter.findShortestPath("A", "C");
 
@@ -39,22 +38,21 @@ void testMultiModalRouting() {
     assert(resDirect.transferCount == 0);
     assert(resDirect.totalTimeMin == 25.0);
 
-    // Test Hasitha's Multi-Criteria Pareto Optimization:
-    // 1. FASTEST_TIME -> Route A -> B -> C (21 mins, 1 transfer)
+    // fastest time preference
     RouteResult optFast = router.findOptimalPath("A", "C", RoutingPreference::FASTEST_TIME);
     assert(optFast.isReachable());
     assert(optFast.pathNodes.size() == 3);
     assert(optFast.transferCount == 1);
     assert(optFast.totalTimeMin == 21.0);
 
-    // 2. MINIMUM_TRANSFERS -> Direct Bus A -> C (25 mins, 0 transfers)
+    // minimum transfers preference
     RouteResult optDirect = router.findOptimalPath("A", "C", RoutingPreference::MINIMUM_TRANSFERS);
     assert(optDirect.isReachable());
     assert(optDirect.pathNodes.size() == 2);
     assert(optDirect.transferCount == 0);
     assert(optDirect.totalTimeMin == 25.0);
 
-    std::cout << "[PASS] All Multi-Modal Dijkstra & Pareto Multi-Criteria Routing Unit Tests PASSED!\n";
+    cout << "[PASS] All Multi-Modal Dijkstra & Pareto Multi-Criteria Routing Unit Tests PASSED!\n";
 }
 
 int main() {

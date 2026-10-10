@@ -5,6 +5,8 @@
 #include "Dijkstra.h"
 #include <string>
 
+using namespace std;
+
 class RoutePlanner {
 private:
     const MultiModalGraph& graph;
@@ -14,12 +16,12 @@ public:
     explicit RoutePlanner(const MultiModalGraph& g, double defaultTransferPenalty = 6.0)
         : graph(g), router(g, defaultTransferPenalty) {}
 
-    RouteResult planJourney(const std::string& originId,
-                            const std::string& destinationId,
+    RouteResult planJourney(const string& originId,
+                            const string& destinationId,
                             RoutingPreference preference = RoutingPreference::FASTEST_TIME) const;
 
-    std::string formatItinerary(const RouteResult& result) const;
-    std::string comparePreferences(const std::string& originId, const std::string& destinationId) const;
+    string formatItinerary(const RouteResult& result) const;
+    string comparePreferences(const string& originId, const string& destinationId) const;
 };
 
 #endif // ROUTEPLANNER_H
