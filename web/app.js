@@ -666,8 +666,8 @@ class InteractiveMapRenderer {
                     <feMergeNode in="SourceGraphic" />
                 </feMerge>
             </filter>
-            <marker id="arrow-neon" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                <path d="M 0 1 L 10 5 L 0 9 z" fill="#10B981" />
+            <marker id="arrow-neon" viewBox="0 0 10 10" refX="16" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#00F5FF" />
             </marker>
         `;
         rootG.appendChild(defs);
@@ -738,11 +738,17 @@ class InteractiveMapRenderer {
                 edgesG.appendChild(line);
             }
         }
+        // Dim non-route edges if an active route is highlighted
+        if (this.highlightRoute && this.highlightRoute.isReachable) {
+            edgesG.setAttribute("opacity", "0.22");
+        }
         rootG.appendChild(edgesG);
 
-        // 4. Render Active Highlighted Route (if exists)
+        // 4. Render Active Highlighted Route (Electric Cyan Neon Glow)
         if (this.highlightRoute && this.highlightRoute.isReachable) {
             const activeG = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            activeG.setAttribute("id", "active-route-layer");
+
             for (const leg of this.highlightRoute.legs) {
                 const uNode = this.graph.getNode(leg.source);
                 const vNode = this.graph.getNode(leg.target);
@@ -751,13 +757,26 @@ class InteractiveMapRenderer {
                 const p1 = this.toScreen(uNode.x, uNode.y);
                 const p2 = this.toScreen(vNode.x, vNode.y);
 
+                // Wide background glow halo
+                const halo = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                halo.setAttribute("x1", p1.x.toFixed(1));
+                halo.setAttribute("y1", p1.y.toFixed(1));
+                halo.setAttribute("x2", p2.x.toFixed(1));
+                halo.setAttribute("y2", p2.y.toFixed(1));
+                halo.setAttribute("stroke", "#00F5FF");
+                halo.setAttribute("stroke-width", "11");
+                halo.setAttribute("stroke-linecap", "round");
+                halo.setAttribute("opacity", "0.35");
+                activeG.appendChild(halo);
+
+                // Sharp foreground animated pulse line with arrow
                 const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
                 line.setAttribute("x1", p1.x.toFixed(1));
                 line.setAttribute("y1", p1.y.toFixed(1));
                 line.setAttribute("x2", p2.x.toFixed(1));
                 line.setAttribute("y2", p2.y.toFixed(1));
-                line.setAttribute("stroke", "#10B981");
-                line.setAttribute("stroke-width", "6");
+                line.setAttribute("stroke", "#00F5FF");
+                line.setAttribute("stroke-width", "5.5");
                 line.setAttribute("stroke-linecap", "round");
                 line.setAttribute("filter", "url(#neonGlow)");
                 line.setAttribute("marker-end", "url(#arrow-neon)");
@@ -994,6 +1013,11 @@ document.addEventListener("DOMContentLoaded", () => {
             btn.classList.add("active");
             const targetId = btn.getAttribute("data-tab");
             document.getElementById(targetId).classList.add("active");
+
+            if (targetId !== "tab-planner") {
+                mapRenderer.highlightRoute = null;
+                mapRenderer.render();
+            }
         });
     });
 
@@ -1146,12 +1170,14 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         document.getElementById("demand-results").style.display = "flex";
+        mapRenderer.highlightRoute = null; // Clear old journey route so congestion heatmap is clean
         mapRenderer.showCongestion = document.getElementById("chk-congestion-heatmap").checked;
         mapRenderer.render();
     });
 
     document.getElementById("btn-reset-congestion").addEventListener("click", () => {
         graph.resetAllCongestion();
+        mapRenderer.highlightRoute = null;
         document.getElementById("demand-results").style.display = "none";
         mapRenderer.render();
     });
@@ -1185,11 +1211,13 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
 
         card.style.display = "flex";
+        mapRenderer.highlightRoute = null; // Clear old journey route so disruption is focused
         mapRenderer.render();
     });
 
     document.getElementById("btn-restore-routes").addEventListener("click", () => {
         graph.init();
+        mapRenderer.highlightRoute = null;
         document.getElementById("disruption-results").style.display = "none";
         mapRenderer.render();
     });

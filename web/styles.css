@@ -779,7 +779,7 @@ body {
 .icon-train { background: #EF4444; }
 .icon-bus { background: #3B82F6; }
 .icon-hub { background: #F59E0B; transform: rotate(45deg); width: 10px; height: 10px; }
-.icon-route { background: #10B981; box-shadow: 0 0 6px #10B981; }
+.icon-route { background: #00F5FF; box-shadow: 0 0 8px #00F5FF; }
 
 /* SVG Viewport */
 .svg-viewport {
